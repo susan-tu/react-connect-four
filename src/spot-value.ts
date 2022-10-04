@@ -1,5 +1,5 @@
 export enum SpotValue {
-  Red,
+  Red = 1,
   Yellow,
   Empty
 }

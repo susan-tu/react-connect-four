@@ -1,13 +1,13 @@
 import { SpotValue } from './spot-value'
 
 export enum GameStatus {
-  RedWon,
+  RedWon = 1,
   YellowWon,
   Stalemate,
   InProgress
 }
 
-function checkForHorizontalWinner(board: SpotValue[], lastPlaced: number) : SpotValue | null {
+export function checkForHorizontalWinner(board: SpotValue[], lastPlaced: number) : SpotValue | null {
   const rowBoundaries = [0, 7, 14, 21, 28, 35, 42, 49] 
   const rowBoundaryIndexForLastPlaced = Math.floor(lastPlaced / 7);
   const rowStartForLastPlaced = rowBoundaries[rowBoundaryIndexForLastPlaced]
@@ -99,7 +99,6 @@ export function calculateGameStatus(board: SpotValue[], lastPlaced: number | nul
   }  
 
   const winner = checkForHorizontalWinner(board, lastPlaced) || checkForVerticalWinner(board, lastPlaced) || checkForSlashWinner(board, lastPlaced) || checkForBackslashWinner(board, lastPlaced);
-
   if (winner === SpotValue.Red) {
     return GameStatus.RedWon;
   }

@@ -1,5 +1,5 @@
 import {describe, expect, test} from '@jest/globals';
-import { calculateGameStatus, GameStatus } from '../src/calculate-game-status';
+import { calculateGameStatus, checkForHorizontalWinner, GameStatus } from '../src/calculate-game-status';
 import { SpotValue } from '../src/spot-value';
 
 describe('calculateGameStatus', () => {
@@ -12,6 +12,7 @@ describe('calculateGameStatus', () => {
         SpotValue.Empty, SpotValue.Empty, SpotValue.Yellow, SpotValue.Empty, SpotValue.Empty, SpotValue.Empty, SpotValue.Empty,
         SpotValue.Empty, SpotValue.Empty, SpotValue.Yellow, SpotValue.Red, SpotValue.Red, SpotValue.Red, SpotValue.Red,
     ];
+    expect(checkForHorizontalWinner(board, 40)).toBe(SpotValue.Red);
     expect(calculateGameStatus(board, 40)).toBe(GameStatus.RedWon);
   });
 

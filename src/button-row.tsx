@@ -9,7 +9,7 @@ type ButtonRowProps = {
 
 export const ButtonRow = ({redIsNext, isGameEnded, topSpotsFilled, onClick}: ButtonRowProps) => {
   const renderButton = (i: number) => {
-    const classes = `drop-btn ${redIsNext ? 'drop-btn--red' : 'drop-btn--black'}`;
+    const classes = `drop-btn ${redIsNext ? 'drop-btn--red' : 'drop-btn--yellow'}`;
     return (
       <button key={`button-${i}`} disabled={isGameEnded || topSpotsFilled[i]} className={classes} onClick={() => onClick(i)}>drop</button>
     );
