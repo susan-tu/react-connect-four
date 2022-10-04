@@ -2,6 +2,7 @@ import {describe, expect, test} from '@jest/globals';
 import { calculateGameStatus, checkForHorizontalWinner, GameStatus } from '../src/calculate-game-status';
 import { SpotValue } from '../src/spot-value';
 
+// TODO I could probably add more tests for the 4 functions that calculateGameStatus calls
 describe('calculateGameStatus', () => {
   test('correctly identifies horizontal row winner', () => {
     const board = [
