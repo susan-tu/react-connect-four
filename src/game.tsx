@@ -28,9 +28,12 @@ const ThemeContext = React.createContext<ThemeContext>({} as ThemeContext);
 
 export const ThemeProvider = ({ children }: {children: React.ReactNode}) => {
   const [theme, setTheme] = useState(themes.classic)
-  const toggleTheme = () => {
-    setTheme(theme === themes.classic ? themes.seventies : themes.classic);
-  }
+  const toggleTheme = React.useCallback(
+    () => {
+      setTheme(theme === themes.classic ? themes.seventies : themes.classic);
+    },
+    [theme, themes]
+  );
 
   return (
     <ThemeContext.Provider value={{ theme , toggleTheme}}>
@@ -40,10 +43,10 @@ export const ThemeProvider = ({ children }: {children: React.ReactNode}) => {
 }
 
 type RowProps = {
-  value: SpotValue[];
+  values: SpotValue[];
 }
 
-const Row = ({value}: RowProps) => {
+const Row = ({values}: RowProps) => {
   const { theme } = useContext(ThemeContext);
   const getColor = (val: SpotValue) => {
     switch(val) {
@@ -59,42 +62,56 @@ const Row = ({value}: RowProps) => {
  
   return (
     <div className="board-row">
-      {Array.from(Array(7).keys()).map((i) => 
-        <span data-testid="spot" key={`spot-${i}`} className="spot" style={{backgroundColor: getColor(value[i])}} ></span>)}
+      {values.map((value, i) =>
+        <span data-testid="spot" key={i} className="spot" style={{backgroundColor: getColor(value)}} ></span>)}
     </div>
   );
 }
 
+type State = {
+  board: SpotValue[],
+  redIsNext: boolean,
+  lastPlaced: number | null
+}
+const initialState: State = {
+  board: Array(7*6).fill(SpotValue.Empty),
+  redIsNext: true,
+  lastPlaced: null
+}
+
+type Action =
+  | { type: 'drop', column: number }
+  | { type: 'restart' }
+
+
+function reducer(state: State, action: Action) {
+  switch (action.type) {
+    case 'drop':
+      let currBoard = state.board.slice();
+      const colIndex = action.column;
+      const col = [colIndex, 7 + colIndex, 14 + colIndex, 21 + colIndex, 28 + colIndex, 35 + colIndex];
+      const indexToFill = col.reverse().find((spot) => state.board[spot] === SpotValue.Empty);
+      if (indexToFill === undefined) {
+        console.log(`Unable to handle drop action in col ${colIndex} due to there not being an empty spot, the drop button should have been disabled`);
+        return state;
+      } else {
+        currBoard[indexToFill] = state.redIsNext ? SpotValue.Red : SpotValue.Yellow;
+        return  { board: currBoard, redIsNext: !state.redIsNext, lastPlaced: indexToFill};
+      }
+    case 'restart':
+      return initialState;
+  }
+}
+
 export const Game = () => {
-  const [board, setBoard] = useState(Array(7*6).fill(SpotValue.Empty));
-  const [redIsNext, setRedIsNext] = useState(true);
-  const [lastPlaced, setLastPlaced] = useState<number | null>(null);
-
-  const handleClick = (colIndex: number) => {
-    let currBoard = board.slice();
-    const col = [colIndex, 7 + colIndex, 14 + colIndex, 21 + colIndex, 28 + colIndex, 35 + colIndex];
-    const indexToFill = col.reverse().find((spot) => board[spot] === SpotValue.Empty);
-    if (indexToFill === undefined) {
-      console.log('Unable to handleClick due to there not being an empty spot, the drop button in this col should have been disabled');
-    } else {
-      currBoard[indexToFill] = redIsNext ? SpotValue.Red : SpotValue.Yellow;
-      setBoard(currBoard);
-      setRedIsNext(!redIsNext);
-      setLastPlaced(indexToFill);
-    }
-  }
-
-  const handleClickPlayAgain = () => {
-    setBoard(Array(7*6).fill(SpotValue.Empty));
-    setRedIsNext(true);
-  }
+  const [state, dispatch] = React.useReducer(reducer, initialState);
 
   const renderGameStatus = (status: GameStatus) => {
     switch(status) {
       case GameStatus.InProgress:
         return (
           <div className='status'>
-            <br/>It's {redIsNext ? 'red' : 'yellow'}'s turn, make a move...
+            <br/>It's {state.redIsNext ? 'red' : 'yellow'}'s turn, make a move...
           </div>
         );
       case GameStatus.Stalemate:
@@ -104,7 +121,7 @@ export const Game = () => {
             The game has ended in a stalemate.
             <br/>
             <br/>
-            <button className='play-again-btn' onClick={() => handleClickPlayAgain()}>restart</button>
+            <button className='play-again-btn' onClick={() => dispatch({type: 'restart'})}>restart</button>
           </div>
         );
       default:
@@ -114,25 +131,25 @@ export const Game = () => {
             {(status === GameStatus.RedWon) ? 'red' : 'yellow'} won the game!
             <br/>
             <br/>
-            <button className='play-again-btn' onClick={() => handleClickPlayAgain()}>restart</button>
+            <button className='play-again-btn' onClick={() => dispatch({type: 'restart'})}>restart</button>
           </div>
         );
     }
   }
   
-  const status = calculateGameStatus(board, lastPlaced);
+  const status = calculateGameStatus(state.board, state.lastPlaced);
   const { toggleTheme } = useContext(ThemeContext);
   return (    
       <div className="game">
           <h1>Connect 4</h1>
         <div className="game-board">
-          <ButtonRow isGameEnded={status !== GameStatus.InProgress} redIsNext={redIsNext} topSpotsFilled={board.slice(0, 7).map((value) => value !== SpotValue.Empty)} onClick={handleClick}/>
-          <Row value={board.slice(0, 7)}/>
-          <Row value={board.slice(7, 14)}/>
-          <Row value={board.slice(14, 21)}/>
-          <Row value={board.slice(21, 28)}/>
-          <Row value={board.slice(28, 35)}/>
-          <Row value={board.slice(35, 42)}/>
+          <ButtonRow isGameEnded={status !== GameStatus.InProgress} redIsNext={state.redIsNext} topSpotsFilled={state.board.slice(0, 7).map((value) => value !== SpotValue.Empty)} onClick={(i) => dispatch({type: 'drop', column: i})}/>
+          <Row values={state.board.slice(0, 7)}/>
+          <Row values={state.board.slice(7, 14)}/>
+          <Row values={state.board.slice(14, 21)}/>
+          <Row values={state.board.slice(21, 28)}/>
+          <Row values={state.board.slice(28, 35)}/>
+          <Row values={state.board.slice(35, 42)}/>
         </div>
         {renderGameStatus(status)}
         <label className="switch">
